@@ -1,0 +1,4 @@
+config/nvim_plugins/vale/.vale/styles/*
+!config/nvim_plugins/vale/.vale/styles/Vocab
+
+config/nvim/undo/*
