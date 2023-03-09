@@ -17,4 +17,4 @@ jobs:
       with:
         dockerfile: ./build/Dockerfile
 
-    - uses: lunarmodules/luacheck@v0
+    - uses: lunarmodules/luacheck@v1
