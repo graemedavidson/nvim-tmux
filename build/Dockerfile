@@ -1,4 +1,4 @@
-FROM python:3.9.16
+FROM python:3.11.2
 # https://hub.docker.com/_/python
 
 LABEL version="0.0.1"
