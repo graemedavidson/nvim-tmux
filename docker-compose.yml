@@ -1,0 +1,13 @@
+---
+version: '3.9'
+
+name: tmux-nvim-tests
+
+services:
+  tmux-nvim:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile
+    volumes:
+    - ./config/tmux/.tmux.conf:/home/developer/.tmux.conf
+    - ./config/nvim/:/home/developer/.config/nvim/
