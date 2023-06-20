@@ -1,5 +1,11 @@
 # CHANGELOG
-# https://keepachangelog.com/en/1.0.0/
+https://keepachangelog.com/en/1.0.0/
+
+## [v0.1.1] - 30/03/23
+### Added
+- tmux-pane-focus plugin
+### Changed
+- Install tmux via tarball
 
 ## [v0.1.0] - 08/03/23
 ### Added

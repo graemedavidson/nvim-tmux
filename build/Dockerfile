@@ -9,9 +9,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   build-essential=12.9 \
   fzf=0.24.3-1+b6 \
   ripgrep=12.1.1-1+b1 \
-  tmux=3.1c-1+deb11u1 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
+
+## Install Tmux ######################################################################################################################
+# https://github.com/tmux/tmux/releases
+ARG TMUX_VERSION=3.3a
+
+RUN mkdir /opt/tmux
+WORKDIR /opt/tmux
+RUN wget --progress=dot:giga https://github.com/tmux/tmux/releases/download/${TMUX_VERSION}/tmux-${TMUX_VERSION}.tar.gz && \
+  tar xzf tmux-${TMUX_VERSION}.tar.gz
+WORKDIR /opt/tmux/tmux-${TMUX_VERSION}
+RUN ./configure && \
+  make && \
+  make install && \
+  ln -s /opt/tmux/tmux-${TMUX_VERSION}/tmux /usr/bin/tmux
 
 ## Install FPP #########################################################################################################################
 RUN mkdir /opt/fpp && \
@@ -65,7 +78,7 @@ RUN useradd -ms /bin/bash developer && \
 USER developer
 WORKDIR /home/developer
 
-## Config + Install Plugins #########################################################################################################
+## Config + Install Plugins ############################################################################################################
 # Tmux
 COPY ./config/tmux/.tmux.conf /home/developer/
 RUN git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm && ~/.tmux/plugins/tpm/bin/install_plugins
