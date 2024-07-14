@@ -1,13 +1,13 @@
 ---
-version: '3.9'
-
 name: tmux-nvim-tests
 
 services:
   tmux-nvim:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./build/Dockerfile
     volumes:
-    - ./config/tmux/.tmux.conf:/home/developer/.tmux.conf
-    - ./config/nvim/:/home/developer/.config/nvim/
+    # WARNING: do not edit with vim due to it creating new files and breaking mount
+    - ./config/tmux/.tmux.conf:/home/developer/.tmux.conf:ro
+    - ./config/nvim/:/home/developer/.config/nvim/:rw

@@ -1,76 +1,61 @@
-FROM python:3.11.4
+FROM python:3.12.4
 # https://hub.docker.com/_/python
 
-LABEL version="0.0.1"
+LABEL version="0.1.0"
 
 ## APT #################################################################################################################################
 # https://www.debian.org/distrib/packages#search_packages | `apt list <package> -a`
 RUN apt-get update && apt-get install -y --no-install-recommends \
   build-essential=12.9 \
-  fzf=0.24.3-1+b6 \
-  ripgrep=12.1.1-1+b1 \
+  fzf=0.38.0-1+b1 \
+  ripgrep=13.0.0-4+b2 \
+  bison=2:3.8.2+dfsg-1+b1 \
+  nodejs=18.19.0+dfsg-6~deb12u2 \
+  npm=9.2.0~ds1-1 \
+  golang-go=2:1.19~1 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
 ## Install Tmux ######################################################################################################################
 # https://github.com/tmux/tmux/releases
-ARG TMUX_VERSION=3.3a
+ARG TMUX_VERSION=3.4
 
 RUN mkdir /opt/tmux
 WORKDIR /opt/tmux
-RUN wget --progress=dot:giga https://github.com/tmux/tmux/releases/download/${TMUX_VERSION}/tmux-${TMUX_VERSION}.tar.gz && \
-  tar xzf tmux-${TMUX_VERSION}.tar.gz
+RUN wget --progress=dot:giga \
+  https://github.com/tmux/tmux/releases/download/${TMUX_VERSION}/tmux-${TMUX_VERSION}.tar.gz \
+  && tar xzf tmux-${TMUX_VERSION}.tar.gz
 WORKDIR /opt/tmux/tmux-${TMUX_VERSION}
-RUN ./configure && \
-  make && \
-  make install && \
-  ln -s /opt/tmux/tmux-${TMUX_VERSION}/tmux /usr/bin/tmux
+RUN ./configure && make && make install \
+  && ln -s /opt/tmux/tmux-${TMUX_VERSION}/tmux /usr/bin/tmux
 
 ## Install FPP #########################################################################################################################
-RUN mkdir /opt/fpp && \
-  git clone https://github.com/facebook/PathPicker.git /opt/fpp && \
-  ln -s /opt/fpp/fpp /usr/bin/fpp
+RUN mkdir /opt/fpp \
+  && git clone https://github.com/facebook/PathPicker.git /opt/fpp \
+  && ln -s /opt/fpp/fpp /usr/bin/fpp
 
 ## Install Neovim ######################################################################################################################
 # https://github.com/neovim/neovim/releases
-ARG NEOVIM_VERSION=v0.8.3
+ARG NEOVIM_VERSION=v0.10.0
 
 RUN mkdir /opt/nvim
 WORKDIR /opt/nvim
-RUN wget --progress=dot:giga https://github.com/neovim/neovim/releases/download/${NEOVIM_VERSION}/nvim-linux64.tar.gz
-RUN tar xzf nvim-linux64.tar.gz && \
-  ln -s /opt/nvim/nvim-linux64/bin/nvim /usr/bin/nvim && \
-  ln -s /opt/nvim/nvim-linux64/bin/nvim /usr/bin/vim
+RUN wget --progress=dot:giga \
+  https://github.com/neovim/neovim/releases/download/${NEOVIM_VERSION}/nvim-linux64.tar.gz \
+  && tar xzf nvim-linux64.tar.gz \
+  && ln -s /opt/nvim/nvim-linux64/bin/nvim /usr/bin/nvim \
+  && ln -s /opt/nvim/nvim-linux64/bin/nvim /usr/bin/vim
 
-# Install Packer
-RUN git clone --depth 1 https://github.com/wbthomason/packer.nvim \
- ~/.local/share/nvim/site/pack/packer/start/packer.nvim
+## Install Vale ######################################################################################################################
+# https://github.com/errata-ai/vale/releases
+ARG VALE_VERSION=3.6.1
 
-## LSP Servers (Which do not auto install) #############################################################################################
-# LUA: https://github.com/sumneko/lua-language-server/releases
-ARG LUA_LS_URL=https://github.com/sumneko/lua-language-server/releases/download
-ARG LUA_LS_BUILD=linux-x64
-ARG LUA_LS_VERSION=3.6.13
-
-RUN mkdir /opt/lua-ls
-WORKDIR /opt/lua-ls
-
-RUN wget --progress=dot:giga ${LUA_LS_URL}/${LUA_LS_VERSION}/lua-language-server-${LUA_LS_VERSION}-${LUA_LS_BUILD}.tar.gz
-RUN tar zxf lua-language-server-${LUA_LS_VERSION}-${LUA_LS_BUILD}.tar.gz && \
-  ln -s /opt/lua-ls/bin/lua-language-server /usr/bin/lua-language-server
-
-# Terraform: https://github.com/hashicorp/terraform-ls/releases
-# Ensure release version has zip asset
-ARG TF_LS_URL=https://github.com/hashicorp/terraform-ls/releases/download
-ARG TF_LS_BUILD=linux_amd64
-ARG TF_LS_VERSION=0.30.1
-
-RUN mkdir /opt/terraform-ls
-WORKDIR /opt/terraform-ls
-
-RUN wget --progress=dot:giga ${TF_LS_URL}/v${TF_LS_VERSION}/terraform-ls_${TF_LS_VERSION}_${TF_LS_BUILD}.zip
-RUN unzip terraform-ls_${TF_LS_VERSION}_${TF_LS_BUILD}.zip && \
-  ln -s /opt/terraform-ls/terraform-ls /usr/bin/terraform-ls
+RUN mkdir /opt/vale
+WORKDIR /opt/vale
+RUN wget --progress=dot:giga \
+  https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz \
+  && tar -xzf vale_${VALE_VERSION}_Linux_64-bit.tar.gz \
+  && ln -s /opt/vale/vale /usr/bin/vale
 
 ## User ################################################################################################################################
 RUN useradd -ms /bin/bash developer && \
@@ -86,8 +71,17 @@ RUN git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm && ~/.tmux
 # Neovim
 RUN mkdir -p /home/developer/.config/nvim
 COPY ./config/nvim/ /home/developer/.config/nvim/
-RUN nvim --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync'
-# RUN nvim --headless +TSUpdate +qall - # install treesitter libraries
+RUN nvim --headless -c '+Lazy! sync' -c '+TSUpdate' +qa
+# NOTE: Mason does not have installall command as of yet: https://github.com/williamboman/mason.nvim/discussions/1618
+# Installs at startup, which is not idea for a test env, but will have to do for now.
+
+# Vale Setup
+# hadolint ignore=DL3059
+RUN mkdir -p .config/vale
+COPY ../config/nvim_plugins/vale/.vale.ini .config/vale
+# Sync Libraries to /home/developer/.local/share/vale/styles
+RUN vale sync
+COPY ../config/nvim_plugins/vale/.vale/styles/Vocab .local/share/vale/styles/config/vocabularies
 
 ## Entry ###############################################################################################################################
 ENTRYPOINT ["bash"]
